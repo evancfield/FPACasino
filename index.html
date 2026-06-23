@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FP&amp;A Summit 2028 Casino</title>
+
+    <!-- Our casino styles -->
+    <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+    <!-- =========================================================
+         HEADER — Casino branding
+         ========================================================= -->
+    <header class="casino-header">
+        <p class="subtitle">Welcome to the</p>
+        <h1>FP&amp;A Summit 2028<br>Casino</h1>
+        <p class="tagline">Where forecasts meet fortune</p>
+        <div class="suits">♠ ♥ ♦ ♣</div>
+    </header>
+
+    <div class="divider"></div>
+
+    <!-- =========================================================
+         WELCOME CARD — Name input & join button
+         ========================================================= -->
+    <main class="card">
+        <h2>Take a Seat</h2>
+        <p class="instructions">
+            Enter your name to receive your chips.<br>
+            Returning players pick up right where they left off.
+        </p>
+
+        <!-- The form fires a "submit" event that app.js listens for -->
+        <form id="join-form" class="input-group">
+            <input
+                type="text"
+                id="player-name"
+                placeholder="Your name…"
+                autocomplete="off"
+                maxlength="60"
+            />
+            <button type="submit" id="join-btn" class="btn-primary">
+                Join Table
+            </button>
+        </form>
+
+        <!-- Error messages appear here (managed by app.js) -->
+        <p id="error-msg" class="error-msg"></p>
+
+        <!-- =====================================================
+             PLAYER PANEL — shown after successful login
+             The CSS class "visible" makes it appear (see style.css)
+             ===================================================== -->
+        <div id="player-panel" class="player-panel">
+            <p class="welcome-text">Good luck,</p>
+            <p class="player-name" id="display-name"><!-- filled by app.js --></p>
+            <p class="balance-label">Your chips</p>
+            <p class="balance-amount" id="display-balance"><!-- filled by app.js --></p>
+        </div>
+    </main>
+
+    <!-- =========================================================
+         PLACEHOLDER — Roulette table (coming in the next build)
+         ========================================================= -->
+    <div class="coming-soon">
+        🎰 Roulette table coming next
+    </div>
+
+    <!-- =========================================================
+         SCRIPTS — order matters:
+           1. config.js     → defines SUPABASE_URL and SUPABASE_KEY
+           2. supabase CDN  → loads window.supabase
+           3. app.js        → our code, runs last so everything above is ready
+         ========================================================= -->
+    <script src="config.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="app.js"></script>
+
+</body>
+</html>
