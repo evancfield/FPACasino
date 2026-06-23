@@ -14,9 +14,10 @@
 -- ---------------------------------------------------------------
 create table if not exists players (
     id         uuid        primary key default gen_random_uuid(),
-    name       text        unique not null,
-    balance    numeric     not null default 100000,
-    created_at timestamptz default now()
+    name        text        unique not null,
+    cost_center text,
+    balance     numeric     not null default 100000,
+    created_at  timestamptz default now()
 );
 
 -- Disable Row Level Security (intentional — internal app only)
@@ -376,3 +377,50 @@ $$;
 
 -- Allow the anonymous (public) role to call the multi-bet round function
 grant execute on function play_round(uuid, jsonb) to anon;
+
+
+-- ---------------------------------------------------------------
+-- 6. MIGRATION: add player cost center for the landing page
+-- ---------------------------------------------------------------
+alter table players
+add column if not exists cost_center text;
+
+-- ---------------------------------------------------------------
+-- 7. FUNCTION: get_or_create_player(p_name text, p_cost_center text)
+--    Updated join flow that stores/refreshes cost center.
+-- ---------------------------------------------------------------
+create or replace function get_or_create_player(
+    p_name text,
+    p_cost_center text
+)
+returns setof players
+language plpgsql
+as $$
+declare
+    v_name text;
+    v_cost_center text;
+begin
+    v_name := trim(p_name);
+    v_cost_center := nullif(trim(p_cost_center), '');
+
+    if v_name is null or length(v_name) = 0 then
+        raise exception 'Player name is required.';
+    end if;
+
+    if v_cost_center is null then
+        raise exception 'Cost center is required.';
+    end if;
+
+    insert into players (name, cost_center, balance)
+    values (v_name, v_cost_center, 100000)
+    on conflict (name) do update
+        set cost_center = excluded.cost_center;
+
+    return query
+        select *
+        from players
+        where name = v_name;
+end;
+$$;
+
+grant execute on function get_or_create_player(text, text) to anon;

@@ -298,10 +298,11 @@ input[type="text"]:focus {
             #b11226 350deg 360deg
         );
     color: #ffd700;
-    display: grid;
-    place-items: center;
+    display: block;
     font-size: clamp(3rem, 8vw, 5rem);
     font-weight: bold;
+    overflow: hidden;
+    position: relative;
     text-shadow: 0 2px 8px rgba(0,0,0,0.9);
     transition: transform 0.4s ease;
 }
@@ -596,4 +597,174 @@ input[type="number"]:focus {
     .number-bet-row {
         grid-template-columns: 1fr;
     }
+}
+
+/* ---- Full roulette board ------------------------------------- */
+.roulette-board {
+    display: grid;
+    gap: 0.7rem;
+    grid-template-columns: 64px 1fr;
+    margin-bottom: 1rem;
+}
+
+.zero-lane {
+    display: grid;
+    gap: 0.45rem;
+    grid-template-rows: repeat(2, 1fr);
+}
+
+.number-grid {
+    display: grid;
+    gap: 0.35rem;
+    grid-template-columns: repeat(12, minmax(34px, 1fr));
+}
+
+.outside-bets {
+    display: grid;
+    gap: 0.75rem;
+    grid-column: 1 / -1;
+    grid-template-columns: repeat(4, 1fr);
+}
+
+.board-number,
+.table-spot {
+    align-items: center;
+    display: flex;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.board-number {
+    border: 1px solid rgba(240, 230, 200, 0.58);
+    border-radius: 8px;
+    color: #f0e6c8;
+    cursor: pointer;
+    font-family: inherit;
+    font-weight: bold;
+    min-height: 48px;
+    padding: 0.25rem;
+    position: relative;
+    transition: transform 0.1s, box-shadow 0.2s, border-color 0.2s;
+}
+
+.board-number:hover {
+    box-shadow: 0 0 16px rgba(255, 215, 0, 0.35);
+    transform: translateY(-2px);
+}
+
+.red-number {
+    background: linear-gradient(135deg, #7e111f, #c9162d);
+}
+
+.black-number {
+    background: linear-gradient(135deg, #050505, #2c2c2c);
+}
+
+.board-chip {
+    align-items: center;
+    background: radial-gradient(circle, #f7f0d0 0 32%, #ffd700 33% 100%);
+    border: 2px dashed rgba(13, 31, 13, 0.55);
+    border-radius: 999px;
+    bottom: 3px;
+    color: #0d1f0d;
+    display: flex;
+    font-size: 0.55rem;
+    font-weight: bold;
+    justify-content: center;
+    left: 50%;
+    min-height: 24px;
+    min-width: 38px;
+    padding: 0.12rem 0.25rem;
+    pointer-events: none;
+    position: absolute;
+    transform: translateX(-50%);
+    z-index: 2;
+}
+
+/* ---- Animated wheel numbers and ball ------------------------- */
+.wheel-number-ring {
+    inset: 0;
+    position: absolute;
+}
+
+.wheel-number {
+    color: #fff8d8;
+    font-size: 0.72rem;
+    font-weight: bold;
+    left: 50%;
+    position: absolute;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.9);
+    top: 50%;
+    transform-origin: center;
+}
+
+.wheel-result-number {
+    align-items: center;
+    background: #101010;
+    border: 2px solid rgba(255, 215, 0, 0.72);
+    border-radius: 50%;
+    color: #ffd700;
+    display: flex;
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    font-weight: bold;
+    height: 34%;
+    justify-content: center;
+    left: 50%;
+    position: absolute;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.9);
+    top: 50%;
+    transform: translate(-50%, -50%);
+    width: 34%;
+    z-index: 3;
+}
+
+.wheel-ball {
+    background: radial-gradient(circle at 30% 30%, #fff, #dedede 50%, #8b8b8b 100%);
+    border-radius: 50%;
+    box-shadow: 0 0 10px rgba(255,255,255,0.8);
+    height: 16px;
+    left: 50%;
+    position: absolute;
+    top: 50%;
+    transform: translate(-50%, -50%) rotate(0deg) translateY(-105px);
+    transform-origin: center;
+    width: 16px;
+    z-index: 4;
+}
+
+.wheel-ball.spinning {
+    animation: spin-ball 0.62s linear infinite reverse;
+}
+
+@keyframes spin-ball {
+    from { transform: translate(-50%, -50%) rotate(0deg) translateY(-105px); }
+    to { transform: translate(-50%, -50%) rotate(360deg) translateY(-105px); }
+}
+
+@media (max-width: 760px) {
+    .roulette-board {
+        grid-template-columns: 1fr;
+    }
+
+    .zero-lane {
+        grid-template-columns: repeat(2, 1fr);
+        grid-template-rows: none;
+    }
+
+    .number-grid {
+        grid-template-columns: repeat(6, minmax(38px, 1fr));
+    }
+
+    .outside-bets {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+/* Spin the number ring while keeping the center result readable. */
+.wheel-display.spinning {
+    animation: none;
+}
+
+.wheel-display.spinning .wheel-number-ring {
+    animation: spin-wheel 1.35s linear infinite;
 }

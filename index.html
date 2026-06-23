@@ -41,6 +41,13 @@
                 autocomplete="off"
                 maxlength="60"
             />
+            <input
+                type="text"
+                id="cost-center"
+                placeholder="Cost center…"
+                autocomplete="off"
+                maxlength="40"
+            />
             <button type="submit" id="join-btn" class="btn-primary">
                 Join Table
             </button>
@@ -68,7 +75,11 @@
         <div class="roulette-layout">
             <div class="wheel-card">
                 <p class="section-label">Double 0 Roulette Wheel</p>
-                <div id="wheel-display" class="wheel-display">00</div>
+                <div id="wheel-display" class="wheel-display">
+                    <div id="wheel-number-ring" class="wheel-number-ring"></div>
+                    <div id="wheel-ball" class="wheel-ball"></div>
+                    <div id="wheel-result-number" class="wheel-result-number">00</div>
+                </div>
                 <p id="spin-result" class="spin-result">Choose a chip, place your bet, then spin.</p>
             </div>
 
@@ -82,23 +93,56 @@
                     <button type="button" class="chip" data-wager="50000">$50K</button>
                 </div>
 
-                <p class="section-label">2. Place chips on the table</p>
-                <div class="mock-table" id="mock-table">
-                    <button type="button" class="table-spot red-bet" data-bet-type="red">Red</button>
-                    <button type="button" class="table-spot black-bet" data-bet-type="black">Black</button>
-                    <button type="button" class="table-spot" data-bet-type="odd">Odd</button>
-                    <button type="button" class="table-spot" data-bet-type="even">Even</button>
-                    <button type="button" class="table-spot green-bet" data-bet-type="number" data-bet-value="0">0</button>
-                    <button type="button" class="table-spot green-bet" data-bet-type="number" data-bet-value="37">00</button>
-                </div>
-
-                <label class="number-bet-label" for="number-bet">
-                    Straight number bet
-                    <span>Enter 1–36, then place that number. Use table spots for 0 or 00.</span>
-                </label>
-                <div class="number-bet-row">
-                    <input type="number" id="number-bet" min="1" max="36" placeholder="17" />
-                    <button type="button" class="table-spot number-bet" data-bet-type="number">Place Number</button>
+                <p class="section-label">2. Place chips on the board</p>
+                <div class="roulette-board" id="roulette-board">
+                    <div class="zero-lane">
+                        <button type="button" class="board-number green-bet" data-bet-type="number" data-bet-value="0">0</button>
+                        <button type="button" class="board-number green-bet" data-bet-type="number" data-bet-value="37">00</button>
+                    </div>
+                    <div class="number-grid">
+                        <button type="button" class="board-number red-number" data-bet-type="number" data-bet-value="1">1</button>
+                        <button type="button" class="board-number black-number" data-bet-type="number" data-bet-value="2">2</button>
+                        <button type="button" class="board-number red-number" data-bet-type="number" data-bet-value="3">3</button>
+                        <button type="button" class="board-number black-number" data-bet-type="number" data-bet-value="4">4</button>
+                        <button type="button" class="board-number red-number" data-bet-type="number" data-bet-value="5">5</button>
+                        <button type="button" class="board-number black-number" data-bet-type="number" data-bet-value="6">6</button>
+                        <button type="button" class="board-number red-number" data-bet-type="number" data-bet-value="7">7</button>
+                        <button type="button" class="board-number black-number" data-bet-type="number" data-bet-value="8">8</button>
+                        <button type="button" class="board-number red-number" data-bet-type="number" data-bet-value="9">9</button>
+                        <button type="button" class="board-number black-number" data-bet-type="number" data-bet-value="10">10</button>
+                        <button type="button" class="board-number black-number" data-bet-type="number" data-bet-value="11">11</button>
+                        <button type="button" class="board-number red-number" data-bet-type="number" data-bet-value="12">12</button>
+                        <button type="button" class="board-number black-number" data-bet-type="number" data-bet-value="13">13</button>
+                        <button type="button" class="board-number red-number" data-bet-type="number" data-bet-value="14">14</button>
+                        <button type="button" class="board-number black-number" data-bet-type="number" data-bet-value="15">15</button>
+                        <button type="button" class="board-number red-number" data-bet-type="number" data-bet-value="16">16</button>
+                        <button type="button" class="board-number black-number" data-bet-type="number" data-bet-value="17">17</button>
+                        <button type="button" class="board-number red-number" data-bet-type="number" data-bet-value="18">18</button>
+                        <button type="button" class="board-number red-number" data-bet-type="number" data-bet-value="19">19</button>
+                        <button type="button" class="board-number black-number" data-bet-type="number" data-bet-value="20">20</button>
+                        <button type="button" class="board-number red-number" data-bet-type="number" data-bet-value="21">21</button>
+                        <button type="button" class="board-number black-number" data-bet-type="number" data-bet-value="22">22</button>
+                        <button type="button" class="board-number red-number" data-bet-type="number" data-bet-value="23">23</button>
+                        <button type="button" class="board-number black-number" data-bet-type="number" data-bet-value="24">24</button>
+                        <button type="button" class="board-number red-number" data-bet-type="number" data-bet-value="25">25</button>
+                        <button type="button" class="board-number black-number" data-bet-type="number" data-bet-value="26">26</button>
+                        <button type="button" class="board-number red-number" data-bet-type="number" data-bet-value="27">27</button>
+                        <button type="button" class="board-number black-number" data-bet-type="number" data-bet-value="28">28</button>
+                        <button type="button" class="board-number black-number" data-bet-type="number" data-bet-value="29">29</button>
+                        <button type="button" class="board-number red-number" data-bet-type="number" data-bet-value="30">30</button>
+                        <button type="button" class="board-number black-number" data-bet-type="number" data-bet-value="31">31</button>
+                        <button type="button" class="board-number red-number" data-bet-type="number" data-bet-value="32">32</button>
+                        <button type="button" class="board-number black-number" data-bet-type="number" data-bet-value="33">33</button>
+                        <button type="button" class="board-number red-number" data-bet-type="number" data-bet-value="34">34</button>
+                        <button type="button" class="board-number black-number" data-bet-type="number" data-bet-value="35">35</button>
+                        <button type="button" class="board-number red-number" data-bet-type="number" data-bet-value="36">36</button>
+                    </div>
+                    <div class="outside-bets">
+                        <button type="button" class="table-spot red-bet" data-bet-type="red">Red</button>
+                        <button type="button" class="table-spot black-bet" data-bet-type="black">Black</button>
+                        <button type="button" class="table-spot" data-bet-type="odd">Odd</button>
+                        <button type="button" class="table-spot" data-bet-type="even">Even</button>
+                    </div>
                 </div>
 
                 <div class="placed-bets-panel">

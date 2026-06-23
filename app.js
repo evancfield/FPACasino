@@ -4,28 +4,37 @@
 // =============================================================
 
 // ---- 1. Grab references to the HTML elements we'll control ----
-const joinForm      = document.getElementById('join-form');
-const nameInput     = document.getElementById('player-name');
-const joinButton    = document.getElementById('join-btn');
-const errorDisplay  = document.getElementById('error-msg');
-const playerPanel   = document.getElementById('player-panel');
-const displayName   = document.getElementById('display-name');
-const displayBal    = document.getElementById('display-balance');
-const rouletteTable = document.getElementById('roulette-table');
-const chipRack      = document.getElementById('chip-rack');
-const mockTable     = document.getElementById('mock-table');
-const numberInput   = document.getElementById('number-bet');
-const spinButton    = document.getElementById('spin-btn');
-const spinError     = document.getElementById('spin-error');
-const wheelDisplay  = document.getElementById('wheel-display');
-const spinResult    = document.getElementById('spin-result');
-const betSummary    = document.getElementById('selected-bet-summary');
-const placedBetsEl  = document.getElementById('placed-bets');
-const clearBetsBtn  = document.getElementById('clear-bets-btn');
+const joinForm          = document.getElementById('join-form');
+const nameInput         = document.getElementById('player-name');
+const costCenterInput   = document.getElementById('cost-center');
+const joinButton        = document.getElementById('join-btn');
+const errorDisplay      = document.getElementById('error-msg');
+const playerPanel       = document.getElementById('player-panel');
+const displayName       = document.getElementById('display-name');
+const displayBal        = document.getElementById('display-balance');
+const rouletteTable     = document.getElementById('roulette-table');
+const chipRack          = document.getElementById('chip-rack');
+const rouletteBoard     = document.getElementById('roulette-board');
+const spinButton        = document.getElementById('spin-btn');
+const spinError         = document.getElementById('spin-error');
+const wheelDisplay      = document.getElementById('wheel-display');
+const wheelNumberRing   = document.getElementById('wheel-number-ring');
+const wheelBall         = document.getElementById('wheel-ball');
+const wheelResultNumber = document.getElementById('wheel-result-number');
+const spinResult        = document.getElementById('spin-result');
+const betSummary        = document.getElementById('selected-bet-summary');
+const placedBetsEl      = document.getElementById('placed-bets');
+const clearBetsBtn      = document.getElementById('clear-bets-btn');
 
 let currentPlayer = null;
 let selectedWager = 1000;
 let placedBets = [];
+
+const wheelNumbers = [
+    0, 28, 9, 26, 30, 11, 7, 20, 32, 17, 5, 22, 34,
+    15, 3, 24, 36, 13, 1, 37, 27, 10, 25, 29, 12, 8,
+    19, 31, 18, 6, 21, 33, 16, 4, 23, 35, 14, 2
+];
 
 // ---- 2. Helper: format a number as $1,234,567 -----------------
 function formatMoney(amount) {
@@ -43,6 +52,18 @@ function formatBetLabel(bet) {
     }
 
     return bet.bet_type.charAt(0).toUpperCase() + bet.bet_type.slice(1);
+}
+
+function getBetKey(bet) {
+    return bet.bet_type === 'number'
+        ? `number:${bet.bet_value}`
+        : bet.bet_type;
+}
+
+function delay(ms) {
+    return new Promise((resolve) => {
+        window.setTimeout(resolve, ms);
+    });
 }
 
 // ---- 3. Helper: show error and status messages ----------------
@@ -67,7 +88,41 @@ function getTotalWager() {
 }
 
 function updateBetSummary() {
-    betSummary.textContent = `Selected chip: ${formatMoney(selectedWager)} • Total on table: ${formatMoney(getTotalWager())}`;
+    betSummary.textContent = `Selected chip: ${formatMoney(selectedWager)} • Total on board: ${formatMoney(getTotalWager())}`;
+}
+
+function getBetSpot(bet) {
+    if (bet.bet_type === 'number') {
+        return rouletteBoard.querySelector(`[data-bet-type="number"][data-bet-value="${bet.bet_value}"]`);
+    }
+
+    return rouletteBoard.querySelector(`[data-bet-type="${bet.bet_type}"]`);
+}
+
+function renderBoardChips() {
+    rouletteBoard.querySelectorAll('.board-chip').forEach((chip) => chip.remove());
+
+    const groupedBets = placedBets.reduce((groups, bet) => {
+        const key = getBetKey(bet);
+        const current = groups.get(key) || { bet, count: 0, wager: 0 };
+        current.count += 1;
+        current.wager += bet.wager;
+        groups.set(key, current);
+        return groups;
+    }, new Map());
+
+    groupedBets.forEach(({ bet, count, wager }) => {
+        const spot = getBetSpot(bet);
+
+        if (!spot) {
+            return;
+        }
+
+        const chip = document.createElement('span');
+        chip.className = 'board-chip';
+        chip.textContent = count > 1 ? `${count}x ${formatMoney(wager)}` : formatMoney(wager);
+        spot.appendChild(chip);
+    });
 }
 
 function renderPlacedBets() {
@@ -76,6 +131,7 @@ function renderPlacedBets() {
 
     if (placedBets.length === 0) {
         placedBetsEl.textContent = 'No chips placed yet.';
+        renderBoardChips();
         updateBetSummary();
         return;
     }
@@ -90,6 +146,7 @@ function renderPlacedBets() {
         placedBetsEl.appendChild(chip);
     });
 
+    renderBoardChips();
     updateBetSummary();
 }
 
@@ -114,17 +171,35 @@ function setSpinLoading(isLoading) {
     spinButton.disabled = isLoading;
     spinButton.textContent = isLoading ? 'Spinning…' : 'Spin Wheel';
     wheelDisplay.classList.toggle('spinning', isLoading);
+    wheelBall.classList.toggle('spinning', isLoading);
 }
 
-function setWheelResult(resultDisplay, color) {
-    wheelDisplay.textContent = resultDisplay;
+function setWheelResult(resultDisplay, color, result) {
+    const winningIndex = wheelNumbers.indexOf(Number(result));
+    const landingAngle = winningIndex >= 0 ? winningIndex * (360 / wheelNumbers.length) : 0;
+
+    wheelResultNumber.textContent = resultDisplay;
     wheelDisplay.classList.remove('red-result', 'black-result', 'green-result');
     wheelDisplay.classList.add(`${color}-result`);
+    wheelBall.style.transform = `translate(-50%, -50%) rotate(${landingAngle}deg) translateY(-105px)`;
 }
 
 function resetTableAfterSpin() {
     placedBets = [];
     renderPlacedBets();
+}
+
+function renderWheelNumbers() {
+    wheelNumberRing.innerHTML = '';
+
+    wheelNumbers.forEach((value, index) => {
+        const number = document.createElement('span');
+        const angle = index * (360 / wheelNumbers.length);
+        number.className = 'wheel-number';
+        number.textContent = formatWheelNumber(value);
+        number.style.transform = `translate(-50%, -50%) rotate(${angle}deg) translateY(-112px) rotate(${-angle}deg)`;
+        wheelNumberRing.appendChild(number);
+    });
 }
 
 // ---- 4. Initialise the Supabase client ------------------------
@@ -163,10 +238,16 @@ joinForm.addEventListener('submit', async function (event) {
     }
 
     const playerName = nameInput.value.trim();
+    const costCenter = costCenterInput.value.trim();
 
-    // Basic client-side validation — name must not be empty
+    // Basic client-side validation — name and cost center must not be empty
     if (!playerName) {
         showError('Please enter your name to join.');
+        return;
+    }
+
+    if (!costCenter) {
+        showError('Please enter your cost center to join.');
         return;
     }
 
@@ -177,7 +258,10 @@ joinForm.addEventListener('submit', async function (event) {
 
     try {
         const { data, error } = await supabaseClient
-            .rpc('get_or_create_player', { p_name: playerName });
+            .rpc('get_or_create_player', {
+                p_name: playerName,
+                p_cost_center: costCenter
+            });
 
         if (error) {
             console.error('Supabase RPC error:', error);
@@ -225,7 +309,7 @@ chipRack.addEventListener('click', function (event) {
     updateBetSummary();
 });
 
-mockTable.addEventListener('click', function (event) {
+rouletteBoard.addEventListener('click', function (event) {
     const tableSpot = event.target.closest('button[data-bet-type]');
 
     if (!tableSpot) {
@@ -235,18 +319,6 @@ mockTable.addEventListener('click', function (event) {
     const betType = tableSpot.dataset.betType;
     const betValue = tableSpot.dataset.betValue ? Number(tableSpot.dataset.betValue) : null;
     addBet(betType, betValue);
-});
-
-document.querySelector('.number-bet').addEventListener('click', function () {
-    const betValue = Number(numberInput.value);
-
-    if (!Number.isInteger(betValue) || betValue < 1 || betValue > 36) {
-        showSpinError('Enter a whole number from 1 to 36, or use the table spots for 0 and 00.');
-        return;
-    }
-
-    addBet('number', betValue);
-    numberInput.value = '';
 });
 
 placedBetsEl.addEventListener('click', function (event) {
@@ -284,13 +356,18 @@ spinButton.addEventListener('click', async function () {
 
     clearSpinError();
     setSpinLoading(true);
-    spinResult.textContent = 'The double-zero wheel is spinning…';
+    spinResult.textContent = 'The ball is circling the double-zero wheel…';
 
     try {
-        const { data, error } = await supabaseClient.rpc('play_round', {
+        const roundRequest = supabaseClient.rpc('play_round', {
             p_player_id: currentPlayer.id,
             p_bets: placedBets
         });
+
+        const [{ data, error }] = await Promise.all([
+            roundRequest,
+            delay(5000)
+        ]);
 
         if (error) {
             console.error('Supabase round error:', error);
@@ -309,7 +386,7 @@ spinButton.addEventListener('click', async function () {
 
         currentPlayer.balance = data.new_balance;
         displayBal.textContent = formatMoney(data.new_balance);
-        setWheelResult(data.result_display, data.color);
+        setWheelResult(data.result_display, data.color, data.result);
 
         const deltaText = formatMoney(Math.abs(data.total_delta));
         const wins = data.bets.filter((bet) => bet.won).length;
@@ -328,4 +405,5 @@ spinButton.addEventListener('click', async function () {
     }
 });
 
+renderWheelNumbers();
 renderPlacedBets();
