@@ -14,9 +14,10 @@
 -- ---------------------------------------------------------------
 create table if not exists players (
     id         uuid        primary key default gen_random_uuid(),
-    name       text        unique not null,
-    balance    numeric     not null default 100000,
-    created_at timestamptz default now()
+    name        text        unique not null,
+    cost_center text,
+    balance     numeric     not null default 100000,
+    created_at  timestamptz default now()
 );
 
 -- Disable Row Level Security (intentional — internal app only)
@@ -201,3 +202,231 @@ $$;
 
 -- Allow the anonymous (public) role to call this function
 grant execute on function play_spin(uuid, numeric, text, int) to anon;
+
+-- ---------------------------------------------------------------
+-- 5. FUNCTION: play_round(...)
+--    Double-zero roulette round that accepts multiple bets at once.
+--
+--    p_bets JSONB format:
+--      [
+--        {"bet_type":"red", "wager":1000},
+--        {"bet_type":"number", "bet_value":17, "wager":5000},
+--        {"bet_type":"number", "bet_value":37, "wager":1000} -- 37 means 00
+--      ]
+--
+--    Returns JSON:
+--      { result, result_display, color, total_delta, new_balance, bets }
+-- ---------------------------------------------------------------
+create or replace function play_round(
+    p_player_id uuid,
+    p_bets      jsonb
+)
+returns json
+language plpgsql
+as $$
+declare
+    v_balance        numeric;
+    v_result         int;       -- 0-36 are normal roulette values; 37 represents 00
+    v_result_display text;
+    v_color          text;
+    v_total_wager    numeric := 0;
+    v_total_delta    numeric := 0;
+    v_new_bal        numeric;
+    v_bet            jsonb;
+    v_bet_type       text;
+    v_bet_value      int;
+    v_wager          numeric;
+    v_won            boolean;
+    v_multiplier     numeric;
+    v_delta          numeric;
+    v_results        jsonb := '[]'::jsonb;
+
+    -- American double-zero roulette red numbers
+    red_numbers int[] := array[1,3,5,7,9,12,14,16,18,19,21,23,25,27,30,32,34,36];
+begin
+    if p_player_id is null then
+        return json_build_object('error', 'Player ID is required.');
+    end if;
+
+    if p_bets is null or jsonb_typeof(p_bets) <> 'array' or jsonb_array_length(p_bets) = 0 then
+        return json_build_object('error', 'Place at least one bet before spinning.');
+    end if;
+
+    if jsonb_array_length(p_bets) > 12 then
+        return json_build_object('error', 'Maximum of 12 bets per spin.');
+    end if;
+
+    select balance into v_balance
+    from players
+    where id = p_player_id
+    for update;
+
+    if not found then
+        return json_build_object('error', 'Player not found.');
+    end if;
+
+    -- Validate all bets and total wager before spinning.
+    for v_bet in select * from jsonb_array_elements(p_bets)
+    loop
+        v_bet_type := v_bet->>'bet_type';
+        v_wager := nullif(v_bet->>'wager', '')::numeric;
+        v_bet_value := nullif(v_bet->>'bet_value', '')::int;
+
+        if v_wager is null then
+            return json_build_object('error', 'Each bet needs a wager.');
+        end if;
+
+        if v_wager < 1000 then
+            return json_build_object('error', 'Minimum wager is $1,000 per bet.');
+        end if;
+
+        if v_wager > 50000 then
+            return json_build_object('error', 'Maximum wager is $50,000 per bet.');
+        end if;
+
+        if v_bet_type not in ('red', 'black', 'odd', 'even', 'number') then
+            return json_build_object('error', 'Unknown bet type: ' || coalesce(v_bet_type, 'null'));
+        end if;
+
+        if v_bet_type = 'number' then
+            if v_bet_value is null or v_bet_value < 0 or v_bet_value > 37 then
+                return json_build_object('error', 'Number bets require a value from 0 to 36, or 37 for 00.');
+            end if;
+        elsif v_bet_value is not null then
+            return json_build_object('error', 'Bet value should only be used for number bets.');
+        end if;
+
+        v_total_wager := v_total_wager + v_wager;
+    end loop;
+
+    if v_total_wager > v_balance then
+        return json_build_object('error', 'Insufficient balance for all placed bets.');
+    end if;
+
+    -- Double-zero wheel: 0, 00, 1-36. 37 represents 00.
+    v_result := floor(random() * 38)::int;
+    v_result_display := case when v_result = 37 then '00' else v_result::text end;
+
+    if v_result = 0 or v_result = 37 then
+        v_color := 'green';
+    elsif v_result = any(red_numbers) then
+        v_color := 'red';
+    else
+        v_color := 'black';
+    end if;
+
+    -- Resolve each bet against the same spin.
+    for v_bet in select * from jsonb_array_elements(p_bets)
+    loop
+        v_bet_type := v_bet->>'bet_type';
+        v_wager := nullif(v_bet->>'wager', '')::numeric;
+        v_bet_value := nullif(v_bet->>'bet_value', '')::int;
+        v_won := false;
+        v_multiplier := 1;
+
+        if v_bet_type = 'red' then
+            v_won := (v_color = 'red');
+        elsif v_bet_type = 'black' then
+            v_won := (v_color = 'black');
+        elsif v_bet_type = 'odd' then
+            v_won := (v_result between 1 and 36 and v_result % 2 = 1);
+        elsif v_bet_type = 'even' then
+            v_won := (v_result between 1 and 36 and v_result % 2 = 0);
+        elsif v_bet_type = 'number' then
+            v_multiplier := 35;
+            v_won := (v_result = v_bet_value);
+        end if;
+
+        if v_won then
+            v_delta := v_wager * v_multiplier;
+        else
+            v_delta := -v_wager;
+        end if;
+
+        v_total_delta := v_total_delta + v_delta;
+        v_results := v_results || jsonb_build_array(jsonb_build_object(
+            'bet_type', v_bet_type,
+            'bet_value', v_bet_value,
+            'wager', v_wager,
+            'won', v_won,
+            'delta', v_delta
+        ));
+    end loop;
+
+    update players
+    set balance = balance + v_total_delta
+    where id = p_player_id;
+
+    update house
+    set safebox = safebox - v_total_delta
+    where id = 1;
+
+    select balance into v_new_bal from players where id = p_player_id;
+
+    return json_build_object(
+        'result', v_result,
+        'result_display', v_result_display,
+        'color', v_color,
+        'total_wager', v_total_wager,
+        'total_delta', v_total_delta,
+        'new_balance', v_new_bal,
+        'bets', v_results
+    );
+end;
+$$;
+
+-- Allow the anonymous (public) role to call the multi-bet round function
+grant execute on function play_round(uuid, jsonb) to anon;
+
+
+-- ---------------------------------------------------------------
+-- 6. MIGRATION: add player cost center for the landing page
+-- ---------------------------------------------------------------
+alter table players
+add column if not exists cost_center text;
+
+-- ---------------------------------------------------------------
+-- 7. FUNCTION: get_or_create_player(p_name text, p_cost_center text)
+--    Updated join flow that stores/refreshes cost center.
+-- ---------------------------------------------------------------
+create or replace function get_or_create_player(
+    p_name text,
+    p_cost_center text
+)
+returns setof players
+language plpgsql
+as $$
+declare
+    v_name text;
+    v_cost_center text;
+begin
+    v_name := trim(p_name);
+    v_cost_center := nullif(trim(p_cost_center), '');
+
+    if v_name is null or length(v_name) = 0 then
+        raise exception 'Player name is required.';
+    end if;
+
+    if v_cost_center is null then
+        raise exception 'Cost center is required.';
+    end if;
+
+    insert into players (name, cost_center, balance)
+    values (v_name, v_cost_center, 100000)
+    on conflict (name) do update
+        set cost_center = excluded.cost_center;
+
+    return query
+        select *
+        from players
+        where name = v_name;
+end;
+$$;
+
+grant execute on function get_or_create_player(text, text) to anon;
+
+-- ---------------------------------------------------------------
+-- 8. GRANTS: allow the internal MVP frontend to read standings
+-- ---------------------------------------------------------------
+grant select on table players to anon;
+grant select on table house to anon;
