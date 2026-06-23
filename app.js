@@ -4,11 +4,7 @@
 // then display their name and chip balance.
 // =============================================================
 
-// ---- 1. Initialise the Supabase client ----------------------
-// SUPABASE_URL and SUPABASE_KEY come from config.js (loaded first in index.html)
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-// ---- 2. Grab references to the HTML elements we'll control --
+// ---- 1. Grab references to the HTML elements we'll control ----
 const joinForm      = document.getElementById('join-form');
 const nameInput     = document.getElementById('player-name');
 const joinButton    = document.getElementById('join-btn');
@@ -17,13 +13,13 @@ const playerPanel   = document.getElementById('player-panel');
 const displayName   = document.getElementById('display-name');
 const displayBal    = document.getElementById('display-balance');
 
-// ---- 3. Helper: format a number as $1,234,567 ---------------
+// ---- 2. Helper: format a number as $1,234,567 -----------------
 function formatMoney(amount) {
     // toLocaleString adds commas; we prepend the dollar sign
     return '$' + Number(amount).toLocaleString('en-US');
 }
 
-// ---- 4. Helper: show an error message below the form --------
+// ---- 3. Helper: show an error message below the form ----------
 function showError(msg) {
     errorDisplay.textContent = msg;
 }
@@ -32,10 +28,40 @@ function clearError() {
     errorDisplay.textContent = '';
 }
 
-// ---- 5. Handle the "Join Table" button click ----------------
+// ---- 4. Initialise the Supabase client ------------------------
+// SUPABASE_URL and SUPABASE_KEY come from config.js (loaded first in index.html)
+function createSupabaseClient() {
+    if (typeof SUPABASE_URL === 'undefined' || typeof SUPABASE_KEY === 'undefined') {
+        throw new Error('Supabase config is missing. Check that config.js is deployed and loaded before app.js.');
+    }
+
+    if (!window.supabase || typeof window.supabase.createClient !== 'function') {
+        throw new Error('Supabase library did not load. Check the CDN script in index.html and your browser console.');
+    }
+
+    return window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+}
+
+let supabaseClient;
+
+try {
+    supabaseClient = createSupabaseClient();
+    console.info('Supabase client initialized.');
+} catch (err) {
+    console.error(err);
+    showError(err.message);
+    joinButton.disabled = true;
+}
+
+// ---- 5. Handle the "Join Table" button click ------------------
 joinForm.addEventListener('submit', async function (event) {
     // Prevent the browser from reloading the page on form submit
     event.preventDefault();
+
+    if (!supabaseClient) {
+        showError('Supabase is not connected. Check config.js, the CDN script, and the browser console.');
+        return;
+    }
 
     const playerName = nameInput.value.trim();
 
@@ -56,16 +82,18 @@ joinForm.addEventListener('submit', async function (event) {
         // Supabase wraps Postgres functions via .rpc('function_name', {params}).
         // It returns { data, error }.
         // ---------------------------------------------------------
-        const { data, error } = await supabase
+        const { data, error } = await supabaseClient
             .rpc('get_or_create_player', { p_name: playerName });
 
         if (error) {
             // Supabase returned a database-level error
+            console.error('Supabase RPC error:', error);
             showError('Could not join: ' + error.message);
             return;
         }
 
         if (!data || data.length === 0) {
+            console.error('Unexpected Supabase response:', data);
             showError('Unexpected response from the server. Please try again.');
             return;
         }
@@ -85,9 +113,10 @@ joinForm.addEventListener('submit', async function (event) {
 
     } catch (err) {
         // Network error or unexpected JS error
+        console.error('Connection error:', err);
         showError('Connection error: ' + err.message);
     } finally {
-        // Always re-enable the button so the user can try again
+        // Always re-enable the button so the user can try again if the form is still visible
         joinButton.disabled = false;
         joinButton.textContent = 'Join Table';
     }
