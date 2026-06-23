@@ -30,7 +30,6 @@ const spinResult        = document.getElementById('spin-result');
 const betSummary        = document.getElementById('selected-bet-summary');
 const placedBetsEl      = document.getElementById('placed-bets');
 const clearBetsBtn      = document.getElementById('clear-bets-btn');
-const houseBalanceEl   = document.getElementById('house-balance');
 const leaderboardList  = document.getElementById('leaderboard-list');
 
 let currentPlayer = null;
@@ -212,32 +211,17 @@ async function refreshCasinoStats() {
         return;
     }
 
-    const [playersResponse, houseResponse] = await Promise.all([
-        supabaseClient
-            .from('players')
-            .select('name, cost_center, balance')
-            .order('balance', { ascending: false }),
-        supabaseClient
-            .from('house')
-            .select('safebox')
-            .eq('id', 1)
-            .maybeSingle()
-    ]);
+    const { data, error } = await supabaseClient
+        .from('players')
+        .select('name, cost_center, balance')
+        .order('balance', { ascending: false });
 
-    if (playersResponse.error) {
-        console.error('Leaderboard refresh error:', playersResponse.error);
+    if (error) {
+        console.error('Leaderboard refresh error:', error);
         return;
     }
 
-    if (houseResponse.error) {
-        console.error('House balance refresh error:', houseResponse.error);
-    }
-
-    renderLeaderboard(playersResponse.data);
-
-    if (houseResponse.data) {
-        houseBalanceEl.textContent = formatMoney(houseResponse.data.safebox);
-    }
+    renderLeaderboard(data);
 }
 
 function setSelectedChip(target) {

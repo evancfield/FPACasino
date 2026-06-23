@@ -351,6 +351,28 @@ begin
             'won', v_won,
             'delta', v_delta
         ));
+
+        insert into wagers (
+            player_id,
+            bet_type,
+            bet_value,
+            wager,
+            result,
+            result_display,
+            color,
+            won,
+            delta
+        ) values (
+            p_player_id,
+            v_bet_type,
+            v_bet_value,
+            v_wager,
+            v_result,
+            v_result_display,
+            v_color,
+            v_won,
+            v_delta
+        );
     end loop;
 
     update players
@@ -430,3 +452,159 @@ grant execute on function get_or_create_player(text, text) to anon;
 -- ---------------------------------------------------------------
 grant select on table players to anon;
 grant select on table house to anon;
+
+
+-- ---------------------------------------------------------------
+-- 9. ADMIN SUPPORT: PIN-gated admin functions and bet history
+-- ---------------------------------------------------------------
+create table if not exists admin_settings (
+    id int primary key default 1 check (id = 1),
+    admin_pin text not null default 'CHANGE_ME'
+);
+
+insert into admin_settings (id, admin_pin)
+values (1, 'CHANGE_ME')
+on conflict (id) do nothing;
+
+create table if not exists wagers (
+    id uuid primary key default gen_random_uuid(),
+    player_id uuid references players(id) on delete set null,
+    bet_type text not null,
+    bet_value int,
+    wager numeric not null,
+    result int not null,
+    result_display text not null,
+    color text not null,
+    won boolean not null,
+    delta numeric not null,
+    created_at timestamptz default now()
+);
+
+alter table admin_settings disable row level security;
+alter table wagers disable row level security;
+
+create or replace function is_admin(p_admin_pin text)
+returns boolean
+language plpgsql
+as $$
+declare
+    v_expected text;
+begin
+    select admin_pin into v_expected from admin_settings where id = 1;
+    return p_admin_pin is not null and p_admin_pin = v_expected;
+end;
+$$;
+
+create or replace function get_admin_snapshot(p_admin_pin text)
+returns json
+language plpgsql
+as $$
+declare
+    v_house numeric;
+    v_players json;
+    v_bet_type_distribution json;
+    v_number_distribution json;
+begin
+    if not is_admin(p_admin_pin) then
+        return json_build_object('error', 'Unauthorized.');
+    end if;
+
+    select safebox into v_house from house where id = 1;
+
+    select coalesce(json_agg(row_to_json(p)), '[]'::json)
+    into v_players
+    from (
+        select id, name, cost_center, balance, created_at
+        from players
+        order by balance desc, name asc
+    ) p;
+
+    select coalesce(json_agg(row_to_json(t)), '[]'::json)
+    into v_bet_type_distribution
+    from (
+        select
+            bet_type,
+            count(*) as bet_count,
+            sum(wager) as total_wagered,
+            sum(case when won then 1 else 0 end) as wins,
+            sum(delta) as net_player_delta
+        from wagers
+        group by bet_type
+        order by bet_count desc, bet_type asc
+    ) t;
+
+    select coalesce(json_agg(row_to_json(n)), '[]'::json)
+    into v_number_distribution
+    from (
+        select
+            case when bet_value = 37 then '00' else bet_value::text end as number,
+            count(*) as bet_count,
+            sum(wager) as total_wagered,
+            sum(case when won then 1 else 0 end) as wins,
+            sum(delta) as net_player_delta
+        from wagers
+        where bet_type = 'number'
+        group by bet_value
+        order by bet_count desc, bet_value asc
+    ) n;
+
+    return json_build_object(
+        'house_balance', v_house,
+        'players', v_players,
+        'bet_type_distribution', v_bet_type_distribution,
+        'number_distribution', v_number_distribution
+    );
+end;
+$$;
+
+create or replace function reset_all_balances(
+    p_admin_pin text,
+    p_balance numeric default 100000
+)
+returns json
+language plpgsql
+as $$
+begin
+    if not is_admin(p_admin_pin) then
+        return json_build_object('error', 'Unauthorized.');
+    end if;
+
+    update players set balance = p_balance;
+    update house set safebox = 0 where id = 1;
+
+    return json_build_object('ok', true, 'reset_balance', p_balance);
+end;
+$$;
+
+create or replace function reset_player_balance(
+    p_admin_pin text,
+    p_player_id uuid,
+    p_balance numeric default 100000
+)
+returns json
+language plpgsql
+as $$
+begin
+    if not is_admin(p_admin_pin) then
+        return json_build_object('error', 'Unauthorized.');
+    end if;
+
+    update players set balance = p_balance where id = p_player_id;
+
+    if not found then
+        return json_build_object('error', 'Player not found.');
+    end if;
+
+    return json_build_object('ok', true, 'player_id', p_player_id, 'reset_balance', p_balance);
+end;
+$$;
+
+-- The public app can read players for leaderboard, but only admin RPCs expose house/admin data.
+grant execute on function is_admin(text) to anon;
+grant execute on function get_admin_snapshot(text) to anon;
+grant execute on function reset_all_balances(text, numeric) to anon;
+grant execute on function reset_player_balance(text, uuid, numeric) to anon;
+grant select on table players to anon;
+revoke select on table house from anon;
+revoke select on table admin_settings from anon;
+revoke select on table wagers from anon;

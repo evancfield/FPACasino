@@ -937,3 +937,114 @@ input[type="number"]:focus {
         grid-column: 2;
     }
 }
+
+/* ---- Admin dashboard ----------------------------------------- */
+.admin-shell {
+    width: 100%;
+    max-width: 1180px;
+}
+
+.admin-card {
+    background: #1a3a1a;
+    border: 2px solid #c9a84c;
+    border-radius: 16px;
+    box-shadow:
+        0 0 34px rgba(0,0,0,0.55),
+        inset 0 1px 0 rgba(255,255,255,0.05);
+    margin-bottom: 1rem;
+    padding: 1.5rem;
+}
+
+.admin-card h2 {
+    color: #ffd700;
+    margin-bottom: 0.5rem;
+    text-align: center;
+}
+
+.admin-card .instructions {
+    color: #a0b890;
+    margin-bottom: 1rem;
+    text-align: center;
+}
+
+.admin-dashboard {
+    display: none;
+}
+
+.admin-dashboard.visible {
+    display: block;
+}
+
+.admin-grid {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: minmax(240px, 0.75fr) minmax(280px, 1fr);
+}
+
+.admin-label {
+    color: #f0e6c8;
+    display: block;
+    margin-bottom: 0.5rem;
+}
+
+.danger-btn {
+    margin-top: 0.8rem;
+}
+
+.admin-player-list,
+.analytics-grid {
+    display: grid;
+    gap: 0.75rem;
+}
+
+.admin-player-row {
+    align-items: center;
+    background: rgba(0,0,0,0.22);
+    border: 1px solid rgba(201, 168, 76, 0.28);
+    border-radius: 10px;
+    display: flex;
+    gap: 1rem;
+    justify-content: space-between;
+    padding: 0.8rem 1rem;
+}
+
+.admin-player-row strong,
+.analytics-card strong {
+    color: #ffd700;
+    display: block;
+}
+
+.admin-player-row span,
+.analytics-card span {
+    color: #a0b890;
+    display: block;
+    font-size: 0.86rem;
+    margin-top: 0.15rem;
+}
+
+.analytics-grid {
+    grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+}
+
+.analytics-card {
+    background: rgba(0,0,0,0.22);
+    border: 1px solid rgba(201, 168, 76, 0.28);
+    border-radius: 10px;
+    padding: 0.8rem 1rem;
+}
+
+@media (max-width: 760px) {
+    .admin-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .admin-player-row {
+        align-items: stretch;
+        flex-direction: column;
+    }
+}
+
+/* Public roulette page now shows leaderboard only; house balance is admin-only. */
+.casino-stats {
+    grid-template-columns: 1fr;
+}

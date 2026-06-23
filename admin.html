@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>FP&amp;A Casino Admin</title>
+    <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+    <header class="casino-header">
+        <p class="subtitle">Admin</p>
+        <h1>FP&amp;A Casino Admin</h1>
+        <p class="tagline">House controls and betting analytics</p>
+    </header>
+
+    <main class="admin-shell">
+        <section class="admin-card" id="admin-login-card">
+            <h2>Admin Access</h2>
+            <p class="instructions">Enter the admin PIN configured in Supabase.</p>
+            <div class="input-group">
+                <input type="password" id="admin-pin" placeholder="Admin PIN" autocomplete="off" />
+                <button type="button" id="admin-unlock-btn" class="btn-primary">Unlock Admin</button>
+            </div>
+            <p id="admin-error" class="error-msg"></p>
+        </section>
+
+        <section id="admin-dashboard" class="admin-dashboard">
+            <div class="admin-grid">
+                <section class="admin-card">
+                    <p class="section-label">House Balance</p>
+                    <p id="admin-house-balance" class="house-balance">$0</p>
+                    <button type="button" id="admin-refresh-btn" class="btn-secondary">Refresh</button>
+                </section>
+
+                <section class="admin-card">
+                    <p class="section-label">Reset Controls</p>
+                    <label class="admin-label" for="reset-balance">Reset balance amount</label>
+                    <input type="number" id="reset-balance" value="100000" min="0" step="1000" />
+                    <button type="button" id="reset-all-btn" class="btn-primary danger-btn">Reset All Balances</button>
+                    <p id="admin-action-msg" class="error-msg"></p>
+                </section>
+            </div>
+
+            <section class="admin-card">
+                <div class="leaderboard-header">
+                    <p class="section-label">Players</p>
+                    <span>Reset individual balances</span>
+                </div>
+                <div id="admin-player-list" class="admin-player-list"></div>
+            </section>
+
+            <section class="admin-card">
+                <p class="section-label">Bet Type Analytics</p>
+                <div id="bet-type-analytics" class="analytics-grid"></div>
+            </section>
+
+            <section class="admin-card">
+                <p class="section-label">Number Bet Analytics</p>
+                <div id="number-analytics" class="analytics-grid"></div>
+            </section>
+        </section>
+    </main>
+
+    <script src="config.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="admin.js"></script>
+</body>
+</html>
