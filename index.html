@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>FP&amp;A Summit 2028 Casino</title>
+    <title>FP&amp;A Casino</title>
 
     <!-- Our casino styles -->
     <link rel="stylesheet" href="style.css" />
@@ -15,8 +15,8 @@
          ========================================================= -->
     <header class="casino-header">
         <p class="subtitle">Welcome to the</p>
-        <h1>FP&amp;A Summit 2028<br>Casino</h1>
-        <p class="tagline">Where forecasts meet fortune</p>
+        <h1>FP&amp;A Casino</h1>
+        <p class="tagline">Where budgets meet fortune</p>
         <div class="suits">♠ ♥ ♦ ♣</div>
     </header>
 
@@ -41,6 +41,13 @@
                 autocomplete="off"
                 maxlength="60"
             />
+            <input
+                type="text"
+                id="cost-center"
+                placeholder="Cost center…"
+                autocomplete="off"
+                maxlength="40"
+            />
             <button type="submit" id="join-btn" class="btn-primary">
                 Join Table
             </button>
@@ -62,11 +69,137 @@
     </main>
 
     <!-- =========================================================
-         PLACEHOLDER — Roulette table (coming in the next build)
+         HOW IT WORKS — budget acknowledgement before roulette
          ========================================================= -->
-    <div class="coming-soon">
-        🎰 Roulette table coming next
-    </div>
+    <section id="how-it-works" class="how-it-works card">
+        <h2>How It Works</h2>
+        <p class="instructions">
+            Here is your chance to increase your travel budget. Pick a portion of your budget and wager it on a spin. If your bet hits, your guidance goes up, and if you lose, that budget is gone.
+        </p>
+
+        <label class="ack-row">
+            <input type="checkbox" id="budget-owner-ack" />
+            <span>I acknowledge that I am the budget owner and understand that the results of my wagers will impact my OH budgets.</span>
+        </label>
+
+        <label class="ack-row">
+            <input type="checkbox" id="no-complain-ack" />
+            <span>I acknowledge that I will not complain if I lose.</span>
+        </label>
+
+        <button type="button" id="start-roulette-btn" class="btn-primary" disabled>
+            I Understand — Start Roulette
+        </button>
+        <p id="ack-error" class="error-msg"></p>
+    </section>
+
+
+    <!-- =========================================================
+         ROULETTE TABLE — shown after acknowledgements
+         ========================================================= -->
+    <section id="roulette-table" class="roulette-table" aria-live="polite">
+        <div class="roulette-layout">
+            <div class="wheel-card">
+                <p class="section-label">Double 0 Roulette Wheel</p>
+                <div id="wheel-display" class="wheel-display">
+                    <div id="wheel-number-ring" class="wheel-number-ring"></div>
+                    <div id="wheel-ball" class="wheel-ball"></div>
+                    <div id="wheel-result-number" class="wheel-result-number">00</div>
+                </div>
+                <p id="spin-result" class="spin-result">Choose a chip, place your bet, then spin.</p>
+            </div>
+
+            <div class="betting-card">
+                <p class="section-label">1. Choose your chip</p>
+                <div class="chip-rack" id="chip-rack">
+                    <button type="button" class="chip selected" data-wager="1000">$1K</button>
+                    <button type="button" class="chip" data-wager="5000">$5K</button>
+                    <button type="button" class="chip" data-wager="10000">$10K</button>
+                    <button type="button" class="chip" data-wager="25000">$25K</button>
+                    <button type="button" class="chip" data-wager="50000">$50K</button>
+                </div>
+
+                <p class="section-label">2. Place chips on the board</p>
+                <div class="roulette-board" id="roulette-board">
+                    <div class="zero-lane">
+                        <button type="button" class="board-number green-bet" data-bet-type="number" data-bet-value="0">0</button>
+                        <button type="button" class="board-number green-bet" data-bet-type="number" data-bet-value="37">00</button>
+                    </div>
+                    <div class="number-grid">
+                        <button type="button" class="board-number red-number" data-bet-type="number" data-bet-value="1">1</button>
+                        <button type="button" class="board-number black-number" data-bet-type="number" data-bet-value="2">2</button>
+                        <button type="button" class="board-number red-number" data-bet-type="number" data-bet-value="3">3</button>
+                        <button type="button" class="board-number black-number" data-bet-type="number" data-bet-value="4">4</button>
+                        <button type="button" class="board-number red-number" data-bet-type="number" data-bet-value="5">5</button>
+                        <button type="button" class="board-number black-number" data-bet-type="number" data-bet-value="6">6</button>
+                        <button type="button" class="board-number red-number" data-bet-type="number" data-bet-value="7">7</button>
+                        <button type="button" class="board-number black-number" data-bet-type="number" data-bet-value="8">8</button>
+                        <button type="button" class="board-number red-number" data-bet-type="number" data-bet-value="9">9</button>
+                        <button type="button" class="board-number black-number" data-bet-type="number" data-bet-value="10">10</button>
+                        <button type="button" class="board-number black-number" data-bet-type="number" data-bet-value="11">11</button>
+                        <button type="button" class="board-number red-number" data-bet-type="number" data-bet-value="12">12</button>
+                        <button type="button" class="board-number black-number" data-bet-type="number" data-bet-value="13">13</button>
+                        <button type="button" class="board-number red-number" data-bet-type="number" data-bet-value="14">14</button>
+                        <button type="button" class="board-number black-number" data-bet-type="number" data-bet-value="15">15</button>
+                        <button type="button" class="board-number red-number" data-bet-type="number" data-bet-value="16">16</button>
+                        <button type="button" class="board-number black-number" data-bet-type="number" data-bet-value="17">17</button>
+                        <button type="button" class="board-number red-number" data-bet-type="number" data-bet-value="18">18</button>
+                        <button type="button" class="board-number red-number" data-bet-type="number" data-bet-value="19">19</button>
+                        <button type="button" class="board-number black-number" data-bet-type="number" data-bet-value="20">20</button>
+                        <button type="button" class="board-number red-number" data-bet-type="number" data-bet-value="21">21</button>
+                        <button type="button" class="board-number black-number" data-bet-type="number" data-bet-value="22">22</button>
+                        <button type="button" class="board-number red-number" data-bet-type="number" data-bet-value="23">23</button>
+                        <button type="button" class="board-number black-number" data-bet-type="number" data-bet-value="24">24</button>
+                        <button type="button" class="board-number red-number" data-bet-type="number" data-bet-value="25">25</button>
+                        <button type="button" class="board-number black-number" data-bet-type="number" data-bet-value="26">26</button>
+                        <button type="button" class="board-number red-number" data-bet-type="number" data-bet-value="27">27</button>
+                        <button type="button" class="board-number black-number" data-bet-type="number" data-bet-value="28">28</button>
+                        <button type="button" class="board-number black-number" data-bet-type="number" data-bet-value="29">29</button>
+                        <button type="button" class="board-number red-number" data-bet-type="number" data-bet-value="30">30</button>
+                        <button type="button" class="board-number black-number" data-bet-type="number" data-bet-value="31">31</button>
+                        <button type="button" class="board-number red-number" data-bet-type="number" data-bet-value="32">32</button>
+                        <button type="button" class="board-number black-number" data-bet-type="number" data-bet-value="33">33</button>
+                        <button type="button" class="board-number red-number" data-bet-type="number" data-bet-value="34">34</button>
+                        <button type="button" class="board-number black-number" data-bet-type="number" data-bet-value="35">35</button>
+                        <button type="button" class="board-number red-number" data-bet-type="number" data-bet-value="36">36</button>
+                    </div>
+                    <div class="outside-bets">
+                        <button type="button" class="table-spot red-bet" data-bet-type="red">Red</button>
+                        <button type="button" class="table-spot black-bet" data-bet-type="black">Black</button>
+                        <button type="button" class="table-spot" data-bet-type="odd">Odd</button>
+                        <button type="button" class="table-spot" data-bet-type="even">Even</button>
+                    </div>
+                </div>
+
+                <div class="placed-bets-panel">
+                    <div class="placed-bets-header">
+                        <span>Chips on table</span>
+                        <button type="button" id="clear-bets-btn" class="btn-secondary">Clear Bets</button>
+                    </div>
+                    <div id="placed-bets" class="placed-bets empty">No chips placed yet.</div>
+                </div>
+
+                <div id="selected-bet-summary" class="selected-bet-summary">
+                    Selected chip: $1,000 • Total on table: $0
+                </div>
+
+                <button type="button" id="spin-btn" class="btn-primary spin-btn">Spin Wheel</button>
+                <p id="spin-error" class="error-msg"></p>
+            </div>
+        </div>
+
+        <aside class="casino-stats" aria-live="polite">
+            <div class="leaderboard-card">
+                <div class="leaderboard-header">
+                    <p class="section-label">Leaderboard</p>
+                    <span>Highest to lowest</span>
+                </div>
+                <ol id="leaderboard-list" class="leaderboard-list">
+                    <li class="leaderboard-empty">Spin to load the standings.</li>
+                </ol>
+            </div>
+        </aside>
+    </section>
 
     <!-- =========================================================
          SCRIPTS — order matters:
