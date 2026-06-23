@@ -69,7 +69,33 @@
     </main>
 
     <!-- =========================================================
-         ROULETTE TABLE — shown after successful login
+         HOW IT WORKS — budget acknowledgement before roulette
+         ========================================================= -->
+    <section id="how-it-works" class="how-it-works card">
+        <h2>How It Works</h2>
+        <p class="instructions">
+            Here is your chance to increase your travel budget. Pick a portion of your budget and wager it on a spin. If your bet hits, your guidance goes up, and if you lose, that budget is gone.
+        </p>
+
+        <label class="ack-row">
+            <input type="checkbox" id="budget-owner-ack" />
+            <span>I acknowledge that I am the budget owner and understand that the results of my wagers will impact my OH budgets.</span>
+        </label>
+
+        <label class="ack-row">
+            <input type="checkbox" id="no-complain-ack" />
+            <span>I acknowledge that I will not complain if I lose.</span>
+        </label>
+
+        <button type="button" id="start-roulette-btn" class="btn-primary" disabled>
+            I Understand — Start Roulette
+        </button>
+        <p id="ack-error" class="error-msg"></p>
+    </section>
+
+
+    <!-- =========================================================
+         ROULETTE TABLE — shown after acknowledgements
          ========================================================= -->
     <section id="roulette-table" class="roulette-table" aria-live="polite">
         <div class="roulette-layout">
@@ -161,6 +187,23 @@
                 <p id="spin-error" class="error-msg"></p>
             </div>
         </div>
+
+        <aside class="casino-stats" aria-live="polite">
+            <div class="house-card">
+                <p class="section-label">House Balance</p>
+                <p id="house-balance" class="house-balance">$0</p>
+            </div>
+
+            <div class="leaderboard-card">
+                <div class="leaderboard-header">
+                    <p class="section-label">Leaderboard</p>
+                    <span>Highest to lowest</span>
+                </div>
+                <ol id="leaderboard-list" class="leaderboard-list">
+                    <li class="leaderboard-empty">Spin to load the standings.</li>
+                </ol>
+            </div>
+        </aside>
     </section>
 
     <!-- =========================================================

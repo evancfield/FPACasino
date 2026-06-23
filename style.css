@@ -768,3 +768,172 @@ input[type="number"]:focus {
 .wheel-display.spinning .wheel-number-ring {
     animation: spin-wheel 1.35s linear infinite;
 }
+
+/* ---- How it works acknowledgement page ----------------------- */
+.how-it-works {
+    display: none;
+    margin-top: 1.5rem;
+    max-width: 680px;
+    text-align: left;
+}
+
+.how-it-works.visible {
+    display: block;
+}
+
+.how-it-works h2,
+.how-it-works .instructions {
+    text-align: center;
+}
+
+.ack-row {
+    align-items: flex-start;
+    background: rgba(0,0,0,0.22);
+    border: 1px solid rgba(201, 168, 76, 0.35);
+    border-radius: 10px;
+    color: #f0e6c8;
+    cursor: pointer;
+    display: flex;
+    gap: 0.8rem;
+    line-height: 1.45;
+    margin: 0.85rem 0;
+    padding: 0.9rem 1rem;
+}
+
+.ack-row input {
+    accent-color: #ffd700;
+    flex: 0 0 auto;
+    margin-top: 0.2rem;
+}
+
+/* Wider table layout so the full betting board stays inside the right panel. */
+.roulette-table {
+    max-width: 1180px;
+}
+
+.roulette-layout {
+    grid-template-columns: minmax(250px, 0.7fr) minmax(560px, 1.55fr);
+}
+
+.betting-card {
+    overflow: hidden;
+}
+
+/* Final-second deceleration for the wheel number ring and ball. */
+.wheel-display.decelerating .wheel-number-ring {
+    animation-duration: 2.8s;
+    animation-timing-function: ease-out;
+}
+
+.wheel-ball.decelerating {
+    animation-duration: 1.45s;
+    animation-timing-function: ease-out;
+}
+
+/* ---- Leaderboard and house balance --------------------------- */
+.casino-stats {
+    display: grid;
+    gap: 1rem;
+    grid-template-columns: minmax(220px, 0.45fr) minmax(360px, 1fr);
+    margin-top: 1.25rem;
+}
+
+.house-card,
+.leaderboard-card {
+    background: radial-gradient(circle at top, #245424, #123012 70%);
+    border: 2px solid #c9a84c;
+    border-radius: 18px;
+    box-shadow:
+        0 0 28px rgba(0,0,0,0.45),
+        inset 0 1px 0 rgba(255,255,255,0.08);
+    padding: 1.25rem;
+}
+
+.house-balance {
+    color: #7dff7d;
+    font-size: clamp(1.8rem, 4vw, 2.8rem);
+    font-weight: bold;
+    text-shadow: 0 0 8px rgba(125, 255, 125, 0.4);
+}
+
+.leaderboard-header {
+    align-items: baseline;
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+.leaderboard-header span {
+    color: #a0b890;
+    font-size: 0.8rem;
+    white-space: nowrap;
+}
+
+.leaderboard-list {
+    display: grid;
+    gap: 0.55rem;
+    list-style: none;
+    margin-top: 0.2rem;
+}
+
+.leaderboard-row,
+.leaderboard-empty {
+    align-items: center;
+    background: rgba(0,0,0,0.22);
+    border: 1px solid rgba(201, 168, 76, 0.28);
+    border-radius: 10px;
+    color: #f0e6c8;
+    display: grid;
+    gap: 0.75rem;
+    grid-template-columns: 42px 1fr auto;
+    padding: 0.7rem 0.8rem;
+}
+
+.leaderboard-empty {
+    display: block;
+    font-style: italic;
+    text-align: center;
+}
+
+.leaderboard-rank {
+    align-items: center;
+    background: #c9a84c;
+    border-radius: 999px;
+    color: #0d1f0d;
+    display: inline-flex;
+    font-weight: bold;
+    height: 30px;
+    justify-content: center;
+    width: 30px;
+}
+
+.leaderboard-name {
+    font-weight: bold;
+}
+
+.leaderboard-meta {
+    color: #a0b890;
+    display: block;
+    font-size: 0.78rem;
+    margin-top: 0.15rem;
+}
+
+.leaderboard-balance {
+    color: #7dff7d;
+    font-weight: bold;
+    white-space: nowrap;
+}
+
+@media (max-width: 760px) {
+    .casino-stats {
+        grid-template-columns: 1fr;
+    }
+
+    .leaderboard-row {
+        grid-template-columns: 36px 1fr;
+    }
+
+    .leaderboard-balance {
+        grid-column: 2;
+    }
+}

@@ -12,6 +12,11 @@ const errorDisplay      = document.getElementById('error-msg');
 const playerPanel       = document.getElementById('player-panel');
 const displayName       = document.getElementById('display-name');
 const displayBal        = document.getElementById('display-balance');
+const howItWorks       = document.getElementById('how-it-works');
+const budgetOwnerAck   = document.getElementById('budget-owner-ack');
+const noComplainAck    = document.getElementById('no-complain-ack');
+const startRouletteBtn = document.getElementById('start-roulette-btn');
+const ackError         = document.getElementById('ack-error');
 const rouletteTable     = document.getElementById('roulette-table');
 const chipRack          = document.getElementById('chip-rack');
 const rouletteBoard     = document.getElementById('roulette-board');
@@ -25,6 +30,8 @@ const spinResult        = document.getElementById('spin-result');
 const betSummary        = document.getElementById('selected-bet-summary');
 const placedBetsEl      = document.getElementById('placed-bets');
 const clearBetsBtn      = document.getElementById('clear-bets-btn');
+const houseBalanceEl   = document.getElementById('house-balance');
+const leaderboardList  = document.getElementById('leaderboard-list');
 
 let currentPlayer = null;
 let selectedWager = 1000;
@@ -161,6 +168,78 @@ function addBet(betType, betValue = null) {
     renderPlacedBets();
 }
 
+
+function renderLeaderboard(players) {
+    leaderboardList.innerHTML = '';
+
+    if (!players || players.length === 0) {
+        const empty = document.createElement('li');
+        empty.className = 'leaderboard-empty';
+        empty.textContent = 'No players yet.';
+        leaderboardList.appendChild(empty);
+        return;
+    }
+
+    players.forEach((player, index) => {
+        const row = document.createElement('li');
+        row.className = 'leaderboard-row';
+
+        const rank = document.createElement('span');
+        rank.className = 'leaderboard-rank';
+        rank.textContent = index + 1;
+
+        const details = document.createElement('span');
+        const name = document.createElement('span');
+        name.className = 'leaderboard-name';
+        name.textContent = player.name;
+
+        const meta = document.createElement('span');
+        meta.className = 'leaderboard-meta';
+        meta.textContent = player.cost_center ? `Cost center ${player.cost_center}` : 'No cost center';
+
+        const balance = document.createElement('span');
+        balance.className = 'leaderboard-balance';
+        balance.textContent = formatMoney(player.balance);
+
+        details.append(name, meta);
+        row.append(rank, details, balance);
+        leaderboardList.appendChild(row);
+    });
+}
+
+async function refreshCasinoStats() {
+    if (!supabaseClient) {
+        return;
+    }
+
+    const [playersResponse, houseResponse] = await Promise.all([
+        supabaseClient
+            .from('players')
+            .select('name, cost_center, balance')
+            .order('balance', { ascending: false }),
+        supabaseClient
+            .from('house')
+            .select('safebox')
+            .eq('id', 1)
+            .maybeSingle()
+    ]);
+
+    if (playersResponse.error) {
+        console.error('Leaderboard refresh error:', playersResponse.error);
+        return;
+    }
+
+    if (houseResponse.error) {
+        console.error('House balance refresh error:', houseResponse.error);
+    }
+
+    renderLeaderboard(playersResponse.data);
+
+    if (houseResponse.data) {
+        houseBalanceEl.textContent = formatMoney(houseResponse.data.safebox);
+    }
+}
+
 function setSelectedChip(target) {
     chipRack.querySelectorAll('button').forEach((button) => {
         button.classList.toggle('selected', button === target);
@@ -172,6 +251,11 @@ function setSpinLoading(isLoading) {
     spinButton.textContent = isLoading ? 'Spinning…' : 'Spin Wheel';
     wheelDisplay.classList.toggle('spinning', isLoading);
     wheelBall.classList.toggle('spinning', isLoading);
+
+    if (!isLoading) {
+        wheelDisplay.classList.remove('decelerating');
+        wheelBall.classList.remove('decelerating');
+    }
 }
 
 function setWheelResult(resultDisplay, color, result) {
@@ -284,7 +368,8 @@ joinForm.addEventListener('submit', async function (event) {
         displayBal.textContent = formatMoney(player.balance);
 
         playerPanel.classList.add('visible');
-        rouletteTable.classList.add('visible');
+        howItWorks.classList.add('visible');
+        refreshCasinoStats();
 
     } catch (err) {
         console.error('Connection error:', err);
@@ -293,6 +378,29 @@ joinForm.addEventListener('submit', async function (event) {
         joinButton.disabled = false;
         joinButton.textContent = 'Join Table';
     }
+});
+
+
+function updateAcknowledgementState() {
+    const ready = budgetOwnerAck.checked && noComplainAck.checked;
+    startRouletteBtn.disabled = !ready;
+
+    if (ready) {
+        ackError.textContent = '';
+    }
+}
+
+budgetOwnerAck.addEventListener('change', updateAcknowledgementState);
+noComplainAck.addEventListener('change', updateAcknowledgementState);
+
+startRouletteBtn.addEventListener('click', function () {
+    if (!budgetOwnerAck.checked || !noComplainAck.checked) {
+        ackError.textContent = 'Please check both acknowledgements before starting roulette.';
+        return;
+    }
+
+    howItWorks.classList.remove('visible');
+    rouletteTable.classList.add('visible');
 });
 
 // ---- 6. Roulette table interactions ---------------------------
@@ -358,7 +466,14 @@ spinButton.addEventListener('click', async function () {
     setSpinLoading(true);
     spinResult.textContent = 'The ball is circling the double-zero wheel…';
 
+    let decelerationTimer;
+
     try {
+        decelerationTimer = window.setTimeout(() => {
+            wheelDisplay.classList.add('decelerating');
+            wheelBall.classList.add('decelerating');
+        }, 4000);
+
         const roundRequest = supabaseClient.rpc('play_round', {
             p_player_id: currentPlayer.id,
             p_bets: placedBets
@@ -396,11 +511,13 @@ spinButton.addEventListener('click', async function () {
             : `${data.result_display} ${data.color}. ${wins} win / ${losses} lose. Net loss: ${deltaText}.`;
 
         resetTableAfterSpin();
+        refreshCasinoStats();
     } catch (err) {
         console.error('Spin connection error:', err);
         showSpinError('Connection error: ' + err.message);
         spinResult.textContent = 'Choose a chip, place your bet, then spin.';
     } finally {
+        window.clearTimeout(decelerationTimer);
         setSpinLoading(false);
     }
 });

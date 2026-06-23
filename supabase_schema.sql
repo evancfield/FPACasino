@@ -424,3 +424,9 @@ end;
 $$;
 
 grant execute on function get_or_create_player(text, text) to anon;
+
+-- ---------------------------------------------------------------
+-- 8. GRANTS: allow the internal MVP frontend to read standings
+-- ---------------------------------------------------------------
+grant select on table players to anon;
+grant select on table house to anon;
