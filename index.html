@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Casino</title>
+    <title>FP&amp;A Casino</title>
 
     <!-- Our casino styles -->
     <link rel="stylesheet" href="style.css" />
@@ -15,8 +15,8 @@
          ========================================================= -->
     <header class="casino-header">
         <p class="subtitle">Welcome to the</p>
-        <h1>Casino Night</h1>
-        <p class="tagline">Where travel budgets meet fortune</p>
+        <h1>FP&amp;A Casino</h1>
+        <p class="tagline">Where budgets meet fortune</p>
         <div class="suits">♠ ♥ ♦ ♣</div>
     </header>
 
@@ -67,8 +67,8 @@
     <section id="roulette-table" class="roulette-table" aria-live="polite">
         <div class="roulette-layout">
             <div class="wheel-card">
-                <p class="section-label">Roulette Wheel</p>
-                <div id="wheel-display" class="wheel-display">?</div>
+                <p class="section-label">Double 0 Roulette Wheel</p>
+                <div id="wheel-display" class="wheel-display">00</div>
                 <p id="spin-result" class="spin-result">Choose a chip, place your bet, then spin.</p>
             </div>
 
@@ -82,25 +82,35 @@
                     <button type="button" class="chip" data-wager="50000">$50K</button>
                 </div>
 
-                <p class="section-label">2. Place it on the table</p>
-                <div class="bet-grid" id="bet-grid">
-                    <button type="button" class="bet-option red-bet selected" data-bet-type="red">Red</button>
-                    <button type="button" class="bet-option black-bet" data-bet-type="black">Black</button>
-                    <button type="button" class="bet-option" data-bet-type="odd">Odd</button>
-                    <button type="button" class="bet-option" data-bet-type="even">Even</button>
+                <p class="section-label">2. Place chips on the table</p>
+                <div class="mock-table" id="mock-table">
+                    <button type="button" class="table-spot red-bet" data-bet-type="red">Red</button>
+                    <button type="button" class="table-spot black-bet" data-bet-type="black">Black</button>
+                    <button type="button" class="table-spot" data-bet-type="odd">Odd</button>
+                    <button type="button" class="table-spot" data-bet-type="even">Even</button>
+                    <button type="button" class="table-spot green-bet" data-bet-type="number" data-bet-value="0">0</button>
+                    <button type="button" class="table-spot green-bet" data-bet-type="number" data-bet-value="37">00</button>
                 </div>
 
                 <label class="number-bet-label" for="number-bet">
                     Straight number bet
-                    <span>Optional: enter 0–36, then select Number</span>
+                    <span>Enter 1–36, then place that number. Use table spots for 0 or 00.</span>
                 </label>
                 <div class="number-bet-row">
-                    <input type="number" id="number-bet" min="0" max="36" placeholder="17" />
-                    <button type="button" class="bet-option number-bet" data-bet-type="number">Number</button>
+                    <input type="number" id="number-bet" min="1" max="36" placeholder="17" />
+                    <button type="button" class="table-spot number-bet" data-bet-type="number">Place Number</button>
+                </div>
+
+                <div class="placed-bets-panel">
+                    <div class="placed-bets-header">
+                        <span>Chips on table</span>
+                        <button type="button" id="clear-bets-btn" class="btn-secondary">Clear Bets</button>
+                    </div>
+                    <div id="placed-bets" class="placed-bets empty">No chips placed yet.</div>
                 </div>
 
                 <div id="selected-bet-summary" class="selected-bet-summary">
-                    Selected: $1,000 on red
+                    Selected chip: $1,000 • Total on table: $0
                 </div>
 
                 <button type="button" id="spin-btn" class="btn-primary spin-btn">Spin Wheel</button>

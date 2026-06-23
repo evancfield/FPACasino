@@ -278,23 +278,24 @@ input[type="text"]:focus {
             #b11226 160deg 170deg,
             #111 170deg 180deg,
             #0d8f3c 180deg 190deg,
-            #111 190deg 200deg,
-            #b11226 200deg 210deg,
-            #111 210deg 220deg,
-            #b11226 220deg 230deg,
-            #111 230deg 240deg,
-            #b11226 240deg 250deg,
-            #111 250deg 260deg,
-            #b11226 260deg 270deg,
-            #111 270deg 280deg,
-            #b11226 280deg 290deg,
-            #111 290deg 300deg,
-            #b11226 300deg 310deg,
-            #111 310deg 320deg,
-            #b11226 320deg 330deg,
-            #111 330deg 340deg,
-            #b11226 340deg 350deg,
-            #111 350deg 360deg
+            #111 190deg 195deg,
+            #0d8f3c 195deg 205deg,
+            #111 205deg 210deg,
+            #b11226 210deg 220deg,
+            #111 220deg 230deg,
+            #b11226 230deg 240deg,
+            #111 240deg 250deg,
+            #b11226 250deg 260deg,
+            #111 260deg 270deg,
+            #b11226 270deg 280deg,
+            #111 280deg 290deg,
+            #b11226 290deg 300deg,
+            #111 300deg 310deg,
+            #b11226 310deg 320deg,
+            #111 320deg 330deg,
+            #b11226 330deg 340deg,
+            #111 340deg 350deg,
+            #b11226 350deg 360deg
         );
     color: #ffd700;
     display: grid;
@@ -470,5 +471,129 @@ input[type="number"]:focus {
 
     .chip-rack {
         grid-template-columns: repeat(3, minmax(64px, 1fr));
+    }
+}
+
+/* ---- Mock betting table and placed chips --------------------- */
+.mock-table {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+}
+
+.table-spot {
+    min-height: 58px;
+    border: 2px solid #4a7c4a;
+    border-radius: 10px;
+    background: rgba(13, 31, 13, 0.82);
+    color: #f0e6c8;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 1rem;
+    font-weight: bold;
+    letter-spacing: 0.04em;
+    position: relative;
+    text-transform: uppercase;
+    transition: transform 0.1s, box-shadow 0.2s, border-color 0.2s;
+}
+
+.table-spot:hover {
+    box-shadow: 0 0 16px rgba(255, 215, 0, 0.35);
+    transform: translateY(-2px);
+}
+
+.green-bet {
+    background: linear-gradient(135deg, #075f27, #0d8f3c);
+    border-color: #8effa9;
+}
+
+.placed-bets-panel {
+    background: rgba(0,0,0,0.24);
+    border: 1px solid rgba(201, 168, 76, 0.45);
+    border-radius: 12px;
+    margin: 1rem 0;
+    padding: 1rem;
+}
+
+.placed-bets-header {
+    align-items: center;
+    color: #ffd700;
+    display: flex;
+    font-size: 0.85rem;
+    font-weight: bold;
+    justify-content: space-between;
+    letter-spacing: 0.1em;
+    margin-bottom: 0.85rem;
+    text-transform: uppercase;
+}
+
+.btn-secondary {
+    background: transparent;
+    border: 1px solid #c9a84c;
+    border-radius: 999px;
+    color: #f0e6c8;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.75rem;
+    padding: 0.35rem 0.75rem;
+}
+
+.btn-secondary:hover {
+    background: rgba(201, 168, 76, 0.16);
+}
+
+.placed-bets {
+    display: grid;
+    gap: 0.6rem;
+    grid-template-columns: repeat(auto-fit, minmax(104px, 1fr));
+    min-height: 3.4rem;
+}
+
+.placed-bets.empty {
+    color: #a0b890;
+    display: block;
+    font-style: italic;
+    min-height: auto;
+    text-align: center;
+}
+
+.placed-chip {
+    align-items: center;
+    aspect-ratio: 1;
+    background: radial-gradient(circle, #f7f0d0 0 30%, #b11226 31% 100%);
+    border: 4px dashed rgba(255,255,255,0.72);
+    border-radius: 50%;
+    color: #0d1f0d;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    font-family: inherit;
+    justify-content: center;
+    line-height: 1.1;
+    min-height: 94px;
+    padding: 0.6rem;
+    text-align: center;
+}
+
+.placed-chip span {
+    font-size: 0.8rem;
+    font-weight: bold;
+}
+
+.placed-chip strong {
+    font-size: 0.75rem;
+    margin-top: 0.2rem;
+}
+
+.placed-chip:hover {
+    filter: brightness(1.08);
+    transform: translateY(-1px);
+}
+
+@media (max-width: 520px) {
+    .mock-table,
+    .number-bet-row {
+        grid-template-columns: 1fr;
     }
 }

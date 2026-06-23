@@ -1,7 +1,6 @@
 // =============================================================
-// app.js — Casino
-// Welcome screen logic: look up or create a player in Supabase,
-// then display their name and chip balance.
+// app.js — FP&A Casino
+// Welcome screen and double-zero roulette table logic.
 // =============================================================
 
 // ---- 1. Grab references to the HTML elements we'll control ----
@@ -14,17 +13,19 @@ const displayName   = document.getElementById('display-name');
 const displayBal    = document.getElementById('display-balance');
 const rouletteTable = document.getElementById('roulette-table');
 const chipRack      = document.getElementById('chip-rack');
-const betGrid       = document.getElementById('bet-grid');
+const mockTable     = document.getElementById('mock-table');
 const numberInput   = document.getElementById('number-bet');
 const spinButton    = document.getElementById('spin-btn');
 const spinError     = document.getElementById('spin-error');
 const wheelDisplay  = document.getElementById('wheel-display');
 const spinResult    = document.getElementById('spin-result');
 const betSummary    = document.getElementById('selected-bet-summary');
+const placedBetsEl  = document.getElementById('placed-bets');
+const clearBetsBtn  = document.getElementById('clear-bets-btn');
 
 let currentPlayer = null;
 let selectedWager = 1000;
-let selectedBetType = 'red';
+let placedBets = [];
 
 // ---- 2. Helper: format a number as $1,234,567 -----------------
 function formatMoney(amount) {
@@ -32,7 +33,19 @@ function formatMoney(amount) {
     return '$' + Number(amount).toLocaleString('en-US');
 }
 
-// ---- 3. Helper: show an error message below the form ----------
+function formatWheelNumber(value) {
+    return Number(value) === 37 ? '00' : String(value);
+}
+
+function formatBetLabel(bet) {
+    if (bet.bet_type === 'number') {
+        return `Number ${formatWheelNumber(bet.bet_value)}`;
+    }
+
+    return bet.bet_type.charAt(0).toUpperCase() + bet.bet_type.slice(1);
+}
+
+// ---- 3. Helper: show error and status messages ----------------
 function showError(msg) {
     errorDisplay.textContent = msg;
 }
@@ -49,21 +62,50 @@ function clearSpinError() {
     spinError.textContent = '';
 }
 
-function formatBetType() {
-    if (selectedBetType !== 'number') {
-        return selectedBetType;
-    }
-
-    const numberValue = numberInput.value.trim();
-    return numberValue ? `number ${numberValue}` : 'a number';
+function getTotalWager() {
+    return placedBets.reduce((total, bet) => total + bet.wager, 0);
 }
 
 function updateBetSummary() {
-    betSummary.textContent = `Selected: ${formatMoney(selectedWager)} on ${formatBetType()}`;
+    betSummary.textContent = `Selected chip: ${formatMoney(selectedWager)} • Total on table: ${formatMoney(getTotalWager())}`;
 }
 
-function setSelectedButton(container, target) {
-    container.querySelectorAll('button').forEach((button) => {
+function renderPlacedBets() {
+    placedBetsEl.innerHTML = '';
+    placedBetsEl.classList.toggle('empty', placedBets.length === 0);
+
+    if (placedBets.length === 0) {
+        placedBetsEl.textContent = 'No chips placed yet.';
+        updateBetSummary();
+        return;
+    }
+
+    placedBets.forEach((bet, index) => {
+        const chip = document.createElement('button');
+        chip.type = 'button';
+        chip.className = 'placed-chip';
+        chip.title = 'Remove this chip';
+        chip.dataset.index = index;
+        chip.innerHTML = `<span>${formatMoney(bet.wager)}</span><strong>${formatBetLabel(bet)}</strong>`;
+        placedBetsEl.appendChild(chip);
+    });
+
+    updateBetSummary();
+}
+
+function addBet(betType, betValue = null) {
+    placedBets.push({
+        bet_type: betType,
+        bet_value: betValue,
+        wager: selectedWager
+    });
+
+    clearSpinError();
+    renderPlacedBets();
+}
+
+function setSelectedChip(target) {
+    chipRack.querySelectorAll('button').forEach((button) => {
         button.classList.toggle('selected', button === target);
     });
 }
@@ -74,10 +116,15 @@ function setSpinLoading(isLoading) {
     wheelDisplay.classList.toggle('spinning', isLoading);
 }
 
-function setWheelResult(result, color) {
-    wheelDisplay.textContent = result;
+function setWheelResult(resultDisplay, color) {
+    wheelDisplay.textContent = resultDisplay;
     wheelDisplay.classList.remove('red-result', 'black-result', 'green-result');
     wheelDisplay.classList.add(`${color}-result`);
+}
+
+function resetTableAfterSpin() {
+    placedBets = [];
+    renderPlacedBets();
 }
 
 // ---- 4. Initialise the Supabase client ------------------------
@@ -129,16 +176,10 @@ joinForm.addEventListener('submit', async function (event) {
     clearError();
 
     try {
-        // ---------------------------------------------------------
-        // Call the get_or_create_player database function.
-        // Supabase wraps Postgres functions via .rpc('function_name', {params}).
-        // It returns { data, error }.
-        // ---------------------------------------------------------
         const { data, error } = await supabaseClient
             .rpc('get_or_create_player', { p_name: playerName });
 
         if (error) {
-            // Supabase returned a database-level error
             console.error('Supabase RPC error:', error);
             showError('Could not join: ' + error.message);
             return;
@@ -150,32 +191,25 @@ joinForm.addEventListener('submit', async function (event) {
             return;
         }
 
-        // data is an array of rows; we want the first (and only) one
         const player = data[0];
         currentPlayer = player;
 
-        // ---------------------------------------------------------
-        // Success! Show the player panel and hide the form.
-        // ---------------------------------------------------------
-        joinForm.style.display = 'none';   // hide the login form
+        joinForm.style.display = 'none';
 
-        displayName.textContent  = player.name;
-        displayBal.textContent   = formatMoney(player.balance);
+        displayName.textContent = player.name;
+        displayBal.textContent = formatMoney(player.balance);
 
-        playerPanel.classList.add('visible');   // makes the panel visible (see CSS)
-        rouletteTable.classList.add('visible');  // show the roulette table
+        playerPanel.classList.add('visible');
+        rouletteTable.classList.add('visible');
 
     } catch (err) {
-        // Network error or unexpected JS error
         console.error('Connection error:', err);
         showError('Connection error: ' + err.message);
     } finally {
-        // Always re-enable the button so the user can try again if the form is still visible
         joinButton.disabled = false;
         joinButton.textContent = 'Join Table';
     }
 });
-
 
 // ---- 6. Roulette table interactions ---------------------------
 chipRack.addEventListener('click', function (event) {
@@ -186,37 +220,50 @@ chipRack.addEventListener('click', function (event) {
     }
 
     selectedWager = Number(chipButton.dataset.wager);
-    setSelectedButton(chipRack, chipButton);
+    setSelectedChip(chipButton);
     clearSpinError();
     updateBetSummary();
 });
 
-betGrid.addEventListener('click', function (event) {
-    const betButton = event.target.closest('button[data-bet-type]');
+mockTable.addEventListener('click', function (event) {
+    const tableSpot = event.target.closest('button[data-bet-type]');
 
-    if (!betButton) {
+    if (!tableSpot) {
         return;
     }
 
-    selectedBetType = betButton.dataset.betType;
-    setSelectedButton(betGrid, betButton);
-    document.querySelector('.number-bet').classList.remove('selected');
-    clearSpinError();
-    updateBetSummary();
+    const betType = tableSpot.dataset.betType;
+    const betValue = tableSpot.dataset.betValue ? Number(tableSpot.dataset.betValue) : null;
+    addBet(betType, betValue);
 });
 
-document.querySelector('.number-bet').addEventListener('click', function (event) {
-    selectedBetType = 'number';
-    betGrid.querySelectorAll('button').forEach((button) => button.classList.remove('selected'));
-    event.currentTarget.classList.add('selected');
-    clearSpinError();
-    updateBetSummary();
-});
+document.querySelector('.number-bet').addEventListener('click', function () {
+    const betValue = Number(numberInput.value);
 
-numberInput.addEventListener('input', function () {
-    if (selectedBetType === 'number') {
-        updateBetSummary();
+    if (!Number.isInteger(betValue) || betValue < 1 || betValue > 36) {
+        showSpinError('Enter a whole number from 1 to 36, or use the table spots for 0 and 00.');
+        return;
     }
+
+    addBet('number', betValue);
+    numberInput.value = '';
+});
+
+placedBetsEl.addEventListener('click', function (event) {
+    const placedChip = event.target.closest('.placed-chip');
+
+    if (!placedChip) {
+        return;
+    }
+
+    placedBets.splice(Number(placedChip.dataset.index), 1);
+    renderPlacedBets();
+});
+
+clearBetsBtn.addEventListener('click', function () {
+    placedBets = [];
+    clearSpinError();
+    renderPlacedBets();
 });
 
 spinButton.addEventListener('click', async function () {
@@ -230,31 +277,23 @@ spinButton.addEventListener('click', async function () {
         return;
     }
 
-    let betValue = null;
-
-    if (selectedBetType === 'number') {
-        betValue = Number(numberInput.value);
-
-        if (!Number.isInteger(betValue) || betValue < 0 || betValue > 36) {
-            showSpinError('Enter a whole number from 0 to 36 for a number bet.');
-            return;
-        }
+    if (placedBets.length === 0) {
+        showSpinError('Place at least one chip on the table before spinning.');
+        return;
     }
 
     clearSpinError();
     setSpinLoading(true);
-    spinResult.textContent = 'The wheel is spinning…';
+    spinResult.textContent = 'The double-zero wheel is spinning…';
 
     try {
-        const { data, error } = await supabaseClient.rpc('play_spin', {
+        const { data, error } = await supabaseClient.rpc('play_round', {
             p_player_id: currentPlayer.id,
-            p_wager: selectedWager,
-            p_bet_type: selectedBetType,
-            p_bet_value: betValue
+            p_bets: placedBets
         });
 
         if (error) {
-            console.error('Supabase spin error:', error);
+            console.error('Supabase round error:', error);
             showSpinError('Could not spin: ' + error.message);
             spinResult.textContent = 'Choose a chip, place your bet, then spin.';
             return;
@@ -262,7 +301,7 @@ spinButton.addEventListener('click', async function () {
 
         if (!data || data.error) {
             const message = data && data.error ? data.error : 'Unexpected spin response. Please try again.';
-            console.error('Unexpected spin response:', data);
+            console.error('Unexpected round response:', data);
             showSpinError(message);
             spinResult.textContent = 'Choose a chip, place your bet, then spin.';
             return;
@@ -270,12 +309,16 @@ spinButton.addEventListener('click', async function () {
 
         currentPlayer.balance = data.new_balance;
         displayBal.textContent = formatMoney(data.new_balance);
-        setWheelResult(data.result, data.color);
+        setWheelResult(data.result_display, data.color);
 
-        const deltaText = formatMoney(Math.abs(data.delta));
-        spinResult.textContent = data.won
-            ? `Winner! ${data.result} ${data.color}. You won ${deltaText}.`
-            : `No luck this spin. ${data.result} ${data.color}. You lost ${deltaText}.`;
+        const deltaText = formatMoney(Math.abs(data.total_delta));
+        const wins = data.bets.filter((bet) => bet.won).length;
+        const losses = data.bets.length - wins;
+        spinResult.textContent = data.total_delta >= 0
+            ? `${data.result_display} ${data.color}. ${wins} win / ${losses} lose. Net win: ${deltaText}.`
+            : `${data.result_display} ${data.color}. ${wins} win / ${losses} lose. Net loss: ${deltaText}.`;
+
+        resetTableAfterSpin();
     } catch (err) {
         console.error('Spin connection error:', err);
         showSpinError('Connection error: ' + err.message);
@@ -285,4 +328,4 @@ spinButton.addEventListener('click', async function () {
     }
 });
 
-updateBetSummary();
+renderPlacedBets();
