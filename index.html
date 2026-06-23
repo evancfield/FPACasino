@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>FP&amp;A Summit 2028 Casino</title>
+    <title>Casino</title>
 
     <!-- Our casino styles -->
     <link rel="stylesheet" href="style.css" />
@@ -15,8 +15,8 @@
          ========================================================= -->
     <header class="casino-header">
         <p class="subtitle">Welcome to the</p>
-        <h1>FP&amp;A Summit 2028<br>Casino</h1>
-        <p class="tagline">Where forecasts meet fortune</p>
+        <h1>Casino Night</h1>
+        <p class="tagline">Where travel budgets meet fortune</p>
         <div class="suits">♠ ♥ ♦ ♣</div>
     </header>
 
@@ -62,11 +62,52 @@
     </main>
 
     <!-- =========================================================
-         PLACEHOLDER — Roulette table (coming in the next build)
+         ROULETTE TABLE — shown after successful login
          ========================================================= -->
-    <div class="coming-soon">
-        🎰 Roulette table coming next
-    </div>
+    <section id="roulette-table" class="roulette-table" aria-live="polite">
+        <div class="roulette-layout">
+            <div class="wheel-card">
+                <p class="section-label">Roulette Wheel</p>
+                <div id="wheel-display" class="wheel-display">?</div>
+                <p id="spin-result" class="spin-result">Choose a chip, place your bet, then spin.</p>
+            </div>
+
+            <div class="betting-card">
+                <p class="section-label">1. Choose your chip</p>
+                <div class="chip-rack" id="chip-rack">
+                    <button type="button" class="chip selected" data-wager="1000">$1K</button>
+                    <button type="button" class="chip" data-wager="5000">$5K</button>
+                    <button type="button" class="chip" data-wager="10000">$10K</button>
+                    <button type="button" class="chip" data-wager="25000">$25K</button>
+                    <button type="button" class="chip" data-wager="50000">$50K</button>
+                </div>
+
+                <p class="section-label">2. Place it on the table</p>
+                <div class="bet-grid" id="bet-grid">
+                    <button type="button" class="bet-option red-bet selected" data-bet-type="red">Red</button>
+                    <button type="button" class="bet-option black-bet" data-bet-type="black">Black</button>
+                    <button type="button" class="bet-option" data-bet-type="odd">Odd</button>
+                    <button type="button" class="bet-option" data-bet-type="even">Even</button>
+                </div>
+
+                <label class="number-bet-label" for="number-bet">
+                    Straight number bet
+                    <span>Optional: enter 0–36, then select Number</span>
+                </label>
+                <div class="number-bet-row">
+                    <input type="number" id="number-bet" min="0" max="36" placeholder="17" />
+                    <button type="button" class="bet-option number-bet" data-bet-type="number">Number</button>
+                </div>
+
+                <div id="selected-bet-summary" class="selected-bet-summary">
+                    Selected: $1,000 on red
+                </div>
+
+                <button type="button" id="spin-btn" class="btn-primary spin-btn">Spin Wheel</button>
+                <p id="spin-error" class="error-msg"></p>
+            </div>
+        </div>
+    </section>
 
     <!-- =========================================================
          SCRIPTS — order matters:
